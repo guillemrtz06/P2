@@ -1,0 +1,95 @@
+
+const int N = 5;   
+const int TOTAL_ITEMS = 12;
+
+const int RECTANGULO = 1;
+const int CIRCULO = 2;
+const int ROJO = 1;
+const int VERDE = 2;
+const int AZUL = 3;
+const int BLANCO = 6;
+
+int buffer[N];
+int entrada = 0;
+int salida = 0;
+
+semaphore mutex;
+semaphore vacios;
+semaphore llenos;
+
+void inicializar_graficos() {
+    int i;
+    for (i = 0; i < N; i++) {
+        create(i + 1, RECTANGULO, BLANCO, 60 + (i * 70), 180, 55, 55);
+        makevisible(i + 1, 1);
+    }
+
+    create(10, CIRCULO, ROJO, 110, 70, 45, 45);
+    makevisible(10, 1);
+
+    create(11, CIRCULO, ROJO, 270, 70, 45, 45);
+    makevisible(11, 1);
+}
+
+void productor() {
+    int i;
+    int dato;
+
+    for (i = 1; i <= TOTAL_ITEMS; i++) {
+        dato = i * 10;
+
+        p(vacios);
+        p(mutex);
+
+        changecolor(10, VERDE);
+
+        buffer[entrada] = dato;
+        cout << "Productor inserta " << dato << " en posicion " << entrada << endl;
+
+        changecolor(entrada + 1, VERDE);
+
+        entrada = (entrada + 1) % N;
+
+        changecolor(10, ROJO);
+
+        v(mutex);
+        v(llenos);
+    }
+}
+
+void consumidor() {
+    int i;
+    int dato;
+
+    for (i = 1; i <= TOTAL_ITEMS; i++) {
+        p(llenos);
+        p(mutex);
+
+        changecolor(11, VERDE);
+
+        dato = buffer[salida];
+        cout << "Consumidor extrae " << dato << " de posicion " << salida << endl;
+
+        changecolor(salida + 1, BLANCO);
+
+        salida = (salida + 1) % N;
+
+        changecolor(11, ROJO);
+
+        v(mutex);
+        v(vacios);
+    }
+}
+
+void main() {
+    initialsem(mutex, 1);
+    initialsem(vacios, N);
+    initialsem(llenos, 0);
+
+    inicializar_graficos();
+
+    cobegin {
+        productor();
+        consumidor();
+    }
+}
